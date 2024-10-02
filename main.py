@@ -51,9 +51,11 @@ root_dir = os.environ.get('data', "data")
 
 if __name__ == "__main__":
 
+    
+
     LEARNING_RATE = 1e-4
     BATCH_SIZE = 4
-    EPOCHS = 50
+    EPOCHS = 200
 
 
     for f in os.scandir(os.path.join(root_dir, "Lucchi")):
@@ -165,10 +167,12 @@ if __name__ == "__main__":
             roi_size=(160,160)
             sw_batch_size=4
             img = val_data[0].float().to(device)
+            #val_data = val_data.unsqueeze(0)
             val_outputs = model(img)
 
             img = img.unsqueeze(0).cpu()
 
+            mask = val_data[1].float().unsqueeze(0)
             plt.figure("test", (18,6))
             plt.subplot(1, 4, 1)
             plt.title(f"image {i}")
@@ -176,13 +180,20 @@ if __name__ == "__main__":
             plt.subplot(1, 4, 2)
             plt.title(f"label {i}")
             plt.imshow(val_data[1][0,0,:,:])
-            plt.subplot(1,4,3)
+
+
+            # Multi-label output processing
+            threshold = 0.5
+            multi_label_output = (val_outputs.sigmoid() > threshold).float()
+
+            plt.subplot(1, 4, 3)
             plt.title(f"output {i}")
-            plt.imshow(torch.argmax(val_outputs, dim=1).detach().cpu()[0,:,:])
-            plt.subplot(1,4,4)
+            plt.imshow(multi_label_output[0][0,:,:].cpu().numpy(), cmap="viridis")
+
+            plt.subplot(1, 4, 4)
             plt.title(f"masked output {i}")
-            plt.imshow(val_data[0][0,0,:,:], cmap="gray")
-            plt.imshow(torch.argmax(val_outputs, dim=1).detach().cpu()[0,:,:], alpha=0.5, cmap="viridis")
+            plt.imshow(val_data[0][0, 0, :, :], cmap="gray")
+            plt.imshow(multi_label_output[0][0,:,:].cpu().numpy(), alpha=0.5, cmap="viridis")
             plt.show()
             if i==2:
                 break
